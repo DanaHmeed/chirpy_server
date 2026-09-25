@@ -16,9 +16,12 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.2",
+    "drizzle-kit": "^0.31.11",
     "typescript": "^7.0.2"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "drizzle-orm": "^0.45.3",
+    "express": "^5.2.1",
+    "postgres": "^3.4.9"
   }
 }
