@@ -3,16 +3,19 @@ import { Request, Response, NextFunction } from "express";
 import { config } from "./config.js";
 
 const app = express();
+app.use(express.json());
 const PORT = 8080;
 
 app.use(middlewareLogResponses);
 
-app.get("/healthz", handlerReadiness);
+// API endpoints
+app.get("/api/healthz", handlerReadiness);
+app.use("/app", middlewareMetricsInc, express.static("./src/app"));
+app.post ("/api/validate_chirp", handlerValidateChirp);
 
-app.use("/app",middlewareMetricsInc, express.static("./src/app"));
-app.get("/metrics", handlerMetrics);
-app.get("/reset", handlerReset);
-
+// Admin endpoints
+app.get("/admin/metrics", handlerMetrics);
+app.post("/admin/reset", handlerReset);
 function middlewareLogResponses(
   req: Request,
   res: Response,
@@ -31,12 +34,6 @@ function middlewareLogResponses(
   next();
 }
 
-function handlerReadiness(req: Request, res: Response) {
-  res.set("Content-Type", "text/plain; charset=utf-8");
-  res.send("OK");
-}
-
-
 function middlewareMetricsInc(
   req: Request,
   res: Response,
@@ -46,9 +43,23 @@ function middlewareMetricsInc(
   next();
 }
 
-function handlerMetrics(req: Request, res: Response) {
+
+function handlerReadiness(req: Request, res: Response) {
   res.set("Content-Type", "text/plain; charset=utf-8");
-  res.send(`Hits: ${config.fileserverHits}`);
+  res.send("OK");
+}
+
+function handlerMetrics(req: Request, res: Response) {
+  res.set("Content-Type", "text/html; charset=utf-8");
+
+  res.send(`
+<html>
+  <body>
+    <h1>Welcome, Chirpy Admin</h1>
+    <p>Chirpy has been visited ${config.fileserverHits} times!</p>
+  </body>
+</html>
+  `);
 }
 
 function handlerReset(req: Request, res: Response) {
@@ -56,6 +67,35 @@ function handlerReset(req: Request, res: Response) {
 
   res.set("Content-Type", "text/plain; charset=utf-8");
   res.send("Hits reset to 0");
+}
+
+function handlerValidateChirp(req: Request, res: Response) {
+  const body = req.body.body;
+
+  if (body.length > 140) {
+    res.status(400).json({
+      error: "Chirp is too long",
+    });
+    return;
+  }
+
+  const profaneWords = ["kerfuffle", "sharbert", "fornax"];
+
+  const words = body.split(" ");
+
+  const cleanedWords = words.map((word: string) => {
+    if (profaneWords.includes(word.toLowerCase())) {
+      return "****";
+    }
+
+    return word;
+  });
+
+  const cleanedBody = cleanedWords.join(" ");
+
+  res.status(200).json({
+    cleanedBody: cleanedBody,
+  });
 }
 
 app.listen(PORT, () => {
