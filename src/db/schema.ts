@@ -1,4 +1,4 @@
-import { pgTable, timestamp, varchar, uuid, text } from "drizzle-orm/pg-core";
+import { pgTable, timestamp, varchar, uuid, text, boolean } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -9,6 +9,9 @@ export const users = pgTable("users", {
     .$onUpdate(() => new Date()),
   email: varchar("email", { length: 256 }).unique().notNull(),
   hashedPassword: varchar("hashed_password", { length: 256 }).notNull().default("unset"),
+  isChirpyRed: boolean("is_chirpy_red")
+  .notNull()
+  .default(false),
 });
 
 export type NewUser = typeof users.$inferInsert;
@@ -43,3 +46,30 @@ export type UserResponse = Omit<
   User,
   "hashedPassword"
 >;
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  token: text("token").primaryKey(),
+
+  createdAt: timestamp("created_at")
+    .notNull()
+    .defaultNow(),
+
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, {
+      onDelete: "cascade",
+    }),
+
+  expiresAt: timestamp("expires_at")
+    .notNull(),
+
+  revokedAt: timestamp("revoked_at"),
+});
+
+export type NewRefreshToken =
+  typeof refreshTokens.$inferInsert;
