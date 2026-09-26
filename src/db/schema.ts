@@ -8,6 +8,7 @@ export const users = pgTable("users", {
     .defaultNow()
     .$onUpdate(() => new Date()),
   email: varchar("email", { length: 256 }).unique().notNull(),
+  hashedPassword: varchar("hashed_password", { length: 256 }).notNull().default("unset"),
 });
 
 export type NewUser = typeof users.$inferInsert;
@@ -35,3 +36,10 @@ export const chirps = pgTable("chirps", {
 });
 
 export type NewChirp = typeof chirps.$inferInsert;
+
+export type User = typeof users.$inferSelect;
+
+export type UserResponse = Omit<
+  User,
+  "hashedPassword"
+>;

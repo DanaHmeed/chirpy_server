@@ -15,6 +15,13 @@
       "when": 1790362161621,
       "tag": "0001_spicy_george_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790413004537,
+      "tag": "0002_cold_richard_fisk",
+      "breakpoints": true
     }
   ]
 }

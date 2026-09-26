@@ -5,11 +5,9 @@ import { BadRequestError, NotFoundError } from "./errors.js";
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
-import {
-  createUser,
-  deleteAllUsers,
-} from "./db/queries/users.js";
 import { createChirp, getAllChirps, getChirpById } from "./db/queries/chirps.js";
+import { createUser, deleteAllUsers, getUserByEmail } from "./db/queries/users.js";
+import {  hashPassword, checkPasswordHash} from "./auth.js";
 
 const migrationClient = postgres(config.db.url, { max: 1 });
 
@@ -30,7 +28,7 @@ app.post("/api/chirps", handlerCreateChirp);
 app.post("/api/users", handlerCreateUser);
 app.get("/api/chirps", handlerGetAllChirps);
 app.get("/api/chirps/:chirpId", handlerGetChirpById);
-
+app.post("/api/login", handlerLogin);
 // Admin endpoints
 app.get("/admin/metrics", handlerMetrics);
 app.post("/admin/reset", handlerReset);
@@ -137,14 +135,23 @@ async function handlerGetAllChirps(req: Request, res: Response) {
 type HTTPError = Error & {
   statusCode?: number;
 };
-async function handlerCreateUser(req: Request, res: Response) {
-  const { email } = req.body;
 
+async function handlerCreateUser(
+  req: Request,
+  res: Response
+) {
+  const { email, password } = req.body;
+  const hashedPassword = await hashPassword(password);
   const user = await createUser({
     email,
+    hashedPassword,
   });
+  const {
+    hashedPassword: _,
+    ...userResponse
+  } = user;
 
-  res.status(201).json(user);
+  res.status(201).json(userResponse);
 }
 
 async function handlerGetChirpById(
@@ -176,6 +183,42 @@ function middlewareErrorHandler(
   res.status(statusCode).json({
     error: message,
   });
+}
+
+async function handlerLogin(
+  req: Request,
+  res: Response
+) {
+  const { email, password } = req.body;
+
+  try {
+    const user = await getUserByEmail(email);
+
+    if (!user) {
+      throw new Error("user not found");
+    }
+
+    const passwordMatches =
+      await checkPasswordHash(
+        password,
+        user.hashedPassword
+      );
+
+    if (!passwordMatches) {
+      throw new Error("incorrect password");
+    }
+
+    const {
+      hashedPassword: _,
+      ...userResponse
+    } = user;
+
+    res.status(200).json(userResponse);
+  } catch {
+    res.status(401).json({
+      error: "incorrect email or password",
+    });
+  }
 }
 
 
