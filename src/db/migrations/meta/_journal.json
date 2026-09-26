@@ -22,6 +22,20 @@
       "when": 1790413004537,
       "tag": "0002_cold_richard_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790417968686,
+      "tag": "0003_lovely_roland_deschain",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790432154527,
+      "tag": "0004_public_bullseye",
+      "breakpoints": true
     }
   ]
 }
